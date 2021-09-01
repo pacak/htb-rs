@@ -1,0 +1,13 @@
+[package]
+authors = ["Michael Baykov <manpacket@gmail.com>"]
+description = "Hierarchical token bucket implementation"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+name = "htb"
+repository = "https://github.com/pacak/htb-rs"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gcd = "2.0.1"
