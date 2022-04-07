@@ -113,6 +113,9 @@ where
     /// - higher priority child of the root
     /// - followed by high priority child of the child, if any, etc.
     /// - followed by the next child
+    ///
+    /// # Errors
+    /// If bucket configuration is invalid - returns an [`Error`] type describing a problem
     pub fn new(tokens: &[BucketCfg<T>]) -> Result<Self, Error> {
         if tokens.is_empty() || tokens[0].parent.is_some() {
             return Err(Error::NoRoot);
@@ -165,10 +168,9 @@ where
                         if Some(parent) == cur.parent.as_ref() {
                             ops.push(Op::Deposit(*parent));
                             break;
-                        } else {
-                            ops.push(Op::Deposit(*parent));
-                            stack.pop();
                         }
+                        ops.push(Op::Deposit(*parent));
+                        stack.pop();
                     } else {
                         return Err(Error::InvalidStructure);
                     }
@@ -234,7 +236,7 @@ where
     ///
     /// Updates internal structure, see also [`advance_ns`][Self::advance_ns]
     pub fn advance(&mut self, time_diff: Duration) {
-        self.advance_ns(time_diff.as_nanos() as usize)
+        self.advance_ns(time_diff.as_nanos() as usize);
     }
 
     /// Check if there's at least one token available at index `T`
