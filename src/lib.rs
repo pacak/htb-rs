@@ -15,7 +15,8 @@ where
 }
 
 /// Internal bucket state representation
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Bucket {
     /// capacity, in abstract units
     cap: usize,
@@ -25,6 +26,7 @@ struct Bucket {
 
 /// Bucket configuration
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BucketCfg<T> {
     /// Current bucket name
     pub this: T,
@@ -78,7 +80,8 @@ impl From<TryFromIntError> for Error {
 /// [`peek`][Self::peek]/[`take`][Self::take].
 ///
 /// When several buckets are feeding from a single parent earlier one gets a priority
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HTB<T> {
     state: Vec<Bucket>,
     ops: Vec<Op<T>>,
@@ -86,7 +89,8 @@ pub struct HTB<T> {
     pub unit_cost: usize,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum Op<T> {
     Inflow(usize),
     Take(T, usize),

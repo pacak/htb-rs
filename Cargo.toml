@@ -11,3 +11,4 @@ version = "0.1.1"
 
 [dependencies]
 gcd = "2.0.1"
+serde = { version = "1.0.136", optional = true, features = ["derive"] }
