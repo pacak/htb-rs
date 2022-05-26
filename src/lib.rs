@@ -52,8 +52,23 @@ pub struct BucketCfg<T> {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Error {
+    /// First bucket passed to [`HTB::new`] must be a node with `parent` set to None
     NoRoot,
+    /// Calculated flow rate is higher that what can fit into usize
+    ///
+    /// flow rate is calculated using least common multiplier and if it is very small
+    /// HTB ends up sing their product which can overflow. To fix this problem try to tweak
+    /// the values to have bigger LCM. For example instead of using 881 and 883 (both are prime
+    /// numbers) try using 882
     InvalidRate,
+
+    /// Invalid config passed to HTB:
+    ///
+    /// Buckets should be given in depth first search traversal order:
+    /// - root with `parent` set to None
+    /// - higher priority child of the root
+    /// - followed by high priority child of the child, if any, etc.
+    /// - followed by the next child
     InvalidStructure,
 }
 impl std::error::Error for Error {}
@@ -85,8 +100,10 @@ impl From<TryFromIntError> for Error {
 pub struct HTB<T> {
     state: Vec<Bucket>,
     ops: Vec<Op<T>>,
-    /// Normalized unit cost
+    /// Normalized unit cost, each nanosecond corresponds to this many units
     pub unit_cost: usize,
+    /// Maximum time required to refill every possible cell
+    time_limit: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -187,10 +204,17 @@ where
             ops.push(Op::Deposit(leftover));
         }
 
+        let limit = unit_cost as u128 * rates.iter().map(|r| *r as u128).sum::<u128>();
+        if limit > usize::MAX as u128 / 2 {
+            // In this case is possible for "flow" to overflow the usize
+            return Err(Error::InvalidRate);
+        }
+
         Ok(Self {
             unit_cost,
             state: items,
             ops,
+            time_limit: limit as usize,
         })
     }
 
@@ -209,6 +233,7 @@ where
         // 4. at most incoming `rate * time_diff` is propagated back!
         // 5. at most `capacity` is deposited to nodes after the final pass
         let mut flow = 0;
+        let time_diff = std::cmp::min(time_diff, self.time_limit);
         for op in self.ops.iter().copied() {
             match op {
                 Op::Inflow(rate) => flow = rate * time_diff,
@@ -350,5 +375,9 @@ mod tests {
         htb.advance(Duration::from_millis(5));
         assert!(htb.peek_n(Rate::Hedge, 5));
         assert!(!htb.peek_n(Rate::Hedge, 6));
+        htb.advance_ns(usize::MAX / 2);
+        assert!(htb.take_n(Rate::Hedge, 4));
+        htb.advance_ns(usize::MAX);
+        assert!(htb.take_n(Rate::Hedge, 4));
     }
 }
