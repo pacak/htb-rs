@@ -232,21 +232,21 @@ where
         // 3. unused tokens go back and deposited at the previous level
         // 4. at most incoming `rate * time_diff` is propagated back!
         // 5. at most `capacity` is deposited to nodes after the final pass
-        let mut flow = 0;
+        let mut flow = 0u128;
         let time_diff = std::cmp::min(time_diff, self.time_limit);
         for op in self.ops.iter().copied() {
             match op {
-                Op::Inflow(rate) => flow = rate * time_diff,
+                Op::Inflow(rate) => flow = rate as u128 * time_diff as u128,
                 Op::Take(k, rate) => {
-                    let combined = flow + self.state[usize::from(k)].value;
-                    flow = combined.min(rate * time_diff);
-                    self.state[usize::from(k)].value = combined - flow;
+                    let combined = flow + self.state[usize::from(k)].value as u128;
+                    flow = combined.min(rate as u128 * time_diff as u128);
+                    self.state[usize::from(k)].value = (combined - flow) as usize;
                 }
                 Op::Deposit(k) => {
                     let ix = usize::from(k);
-                    let combined = flow + self.state[ix].value;
-                    let deposited = self.state[ix].cap.min(combined);
-                    self.state[ix].value = deposited;
+                    let combined = flow + self.state[ix].value as u128;
+                    let deposited = combined.min(self.state[ix].cap as u128);
+                    self.state[ix].value = deposited as usize;
                     if combined > deposited {
                         flow = combined - deposited;
                     } else {
