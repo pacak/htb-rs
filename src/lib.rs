@@ -7,7 +7,7 @@ impl<T> Index<T> for HTB<T>
 where
     usize: From<T>,
 {
-    type Output = usize;
+    type Output = u64;
 
     fn index(&self, index: T) -> &Self::Output {
         &self.state[usize::from(index)].value
@@ -19,9 +19,9 @@ where
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Bucket {
     /// capacity, in abstract units
-    cap: usize,
+    cap: u64,
     /// currently contained value
-    value: usize,
+    value: u64,
 }
 
 /// Bucket configuration
@@ -33,7 +33,7 @@ pub struct BucketCfg<T> {
     /// Parent name
     pub parent: Option<T>,
     /// Allowed flow rate in number of tokens per duration
-    pub rate: (usize, Duration),
+    pub rate: (u64, Duration),
     /// Burst capacity in tokens, can be 0 if burst is not required
     /// at this step.
     ///
@@ -47,7 +47,7 @@ pub struct BucketCfg<T> {
     /// capacity of 5 gives the same rate of 10 tokens per second bucket
     /// on average but 5 tokens must be consumed in first half of the second
     /// and 5 remaining tokens - in the second half of the second.
-    pub capacity: usize,
+    pub capacity: u64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -101,16 +101,16 @@ pub struct HTB<T> {
     state: Vec<Bucket>,
     ops: Vec<Op<T>>,
     /// Normalized unit cost, each nanosecond corresponds to this many units
-    pub unit_cost: usize,
+    pub unit_cost: u64,
     /// Maximum time required to refill every possible cell
-    time_limit: usize,
+    time_limit: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum Op<T> {
-    Inflow(usize),
-    Take(T, usize),
+    Inflow(u64),
+    Take(T, u64),
     Deposit(T),
 }
 
@@ -140,7 +140,7 @@ where
 
         // first we need to convert flow rate from items per unit of time
         // to fractions per nanosecond
-        let unit_cost: usize = tokens
+        let unit_cost: u64 = tokens
             .iter()
             .map(|cfg| cfg.rate.1.as_nanos())
             .reduce(lcm)
@@ -149,7 +149,7 @@ where
         let rates = tokens
             .iter()
             .map(|cfg| {
-                usize::try_from(cfg.rate.0 as u128 * unit_cost as u128 / cfg.rate.1.as_nanos())
+                u64::try_from(cfg.rate.0 as u128 * unit_cost as u128 / cfg.rate.1.as_nanos())
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -214,7 +214,7 @@ where
             unit_cost,
             state: items,
             ops,
-            time_limit: limit as usize,
+            time_limit: limit as u64,
         })
     }
 
@@ -225,7 +225,7 @@ where
     /// # Performance
     ///
     /// Update cost is O(N) where N is number of buckets
-    pub fn advance_ns(&mut self, time_diff: usize) {
+    pub fn advance_ns(&mut self, time_diff: u64) {
         // we start at the top and insert new tokens according to this rules:
         // 1. at most `rate * time_diff` is propagated via links
         // 2. incoming `rate * time_diff` is combined with stored values
@@ -240,13 +240,13 @@ where
                 Op::Take(k, rate) => {
                     let combined = flow + self.state[usize::from(k)].value as u128;
                     flow = combined.min(rate as u128 * time_diff as u128);
-                    self.state[usize::from(k)].value = (combined - flow) as usize;
+                    self.state[usize::from(k)].value = (combined - flow) as u64;
                 }
                 Op::Deposit(k) => {
                     let ix = usize::from(k);
                     let combined = flow + self.state[ix].value as u128;
                     let deposited = combined.min(self.state[ix].cap as u128);
-                    self.state[ix].value = deposited as usize;
+                    self.state[ix].value = deposited as u64;
                     if combined > deposited {
                         flow = combined - deposited;
                     } else {
@@ -261,7 +261,7 @@ where
     ///
     /// Updates internal structure, see also [`advance_ns`][Self::advance_ns]
     pub fn advance(&mut self, time_diff: Duration) {
-        self.advance_ns(time_diff.as_nanos() as usize);
+        self.advance_ns(time_diff.as_nanos() as u64);
     }
 
     /// Check if there's at least one token available at index `T`
@@ -275,7 +275,7 @@ where
     ///
     /// See also [`peek`][Self::peek]
     pub fn peek_n(&self, label: T, cnt: usize) -> bool {
-        self.state[usize::from(label)].value >= self.unit_cost * cnt
+        self.state[usize::from(label)].value >= self.unit_cost * cnt as u64
     }
 
     /// Consume a single token from `T`
@@ -297,7 +297,7 @@ where
     /// See also [`take`][Self::take]
     pub fn take_n(&mut self, label: T, cnt: usize) -> bool {
         let item = &mut self.state[usize::from(label)];
-        match item.value.checked_sub(self.unit_cost * cnt) {
+        match item.value.checked_sub(self.unit_cost * cnt as u64) {
             Some(new) => {
                 item.value = new;
                 true
@@ -375,9 +375,9 @@ mod tests {
         htb.advance(Duration::from_millis(5));
         assert!(htb.peek_n(Rate::Hedge, 5));
         assert!(!htb.peek_n(Rate::Hedge, 6));
-        htb.advance_ns(usize::MAX / 2);
+        htb.advance_ns(u64::MAX / 2);
         assert!(htb.take_n(Rate::Hedge, 4));
-        htb.advance_ns(usize::MAX);
+        htb.advance_ns(u64::MAX);
         assert!(htb.take_n(Rate::Hedge, 4));
     }
 }
