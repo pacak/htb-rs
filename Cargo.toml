@@ -5,12 +5,12 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 name = "htb"
 repository = "https://github.com/pacak/htb-rs"
-version = "0.2.1"
+version = "0.2.2"
 categories = ["algorithms", "network-programming", "concurrency"]
 keywords = ["rate-limiting", "rate-limit", "htb", "token-bucket"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gcd = "2.0.1"
-serde = { version = "1.0.136", optional = true, features = ["derive"] }
+gcd = "2.1.0"
+serde = { version = "1.0.147", optional = true, features = ["derive"] }
