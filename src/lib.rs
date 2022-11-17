@@ -218,6 +218,20 @@ where
         })
     }
 
+    /// Drain all the available tokens
+    pub fn drain(&mut self) {
+        for bucket in self.state.iter_mut() {
+            bucket.value = 0;
+        }
+    }
+
+    /// Refill all the available buckets to full capacity
+    pub fn refill(&mut self) {
+        for bucket in self.state.iter_mut() {
+            bucket.value = bucket.cap;
+        }
+    }
+
     /// Advance time by number of nanoseconds
     ///
     /// Updates internal structure, see also [`advance`][Self::advance]

@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.2] - 2022-11-17
+- Add refill and drain methods
+
 ## [0.2.1] - 2022-11-17
 - Derive PartialEq and Eq for BucketCfg
 
