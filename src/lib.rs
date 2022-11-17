@@ -25,7 +25,7 @@ struct Bucket {
 }
 
 /// Bucket configuration
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BucketCfg<T> {
     /// Current bucket name
