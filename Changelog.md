@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.1] - 2022-11-17
+- Derive PartialEq and Eq for BucketCfg
+
 ## [0.2.0] - 2022-07-09
 - avoid overflows by performing internal computations in u128
 - API is changed to use u64 instead of usize
