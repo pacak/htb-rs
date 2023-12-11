@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.3] - 2023-12-11
+- optional borsh support
+
 ## [0.2.2] - 2022-11-17
 - Add refill and drain methods
 
