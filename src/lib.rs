@@ -41,6 +41,13 @@ pub struct BucketCfg<T> {
     /// Parent name
     pub parent: Option<T>,
     /// Allowed flow rate in number of tokens per duration
+    #[cfg_attr(
+        feature = "borsh",
+        borsh(
+            serialize_with = "borsh_rate_impl::serialize",
+            deserialize_with = "borsh_rate_impl::deserialize"
+        )
+    )]
     pub rate: (u64, Duration),
     /// Burst capacity in tokens, can be 0 if burst is not required
     /// at this step.
@@ -56,6 +63,29 @@ pub struct BucketCfg<T> {
     /// on average but 5 tokens must be consumed in first half of the second
     /// and 5 remaining tokens - in the second half of the second.
     pub capacity: u64,
+}
+
+#[cfg(feature = "borsh")]
+/// Borsh serialisation for [`core::time::Duration`] without having to depend on
+/// borsh upstream adding support for this type.
+mod borsh_rate_impl {
+    pub(crate) fn serialize(
+        (r, duration): &(u64, core::time::Duration),
+        writer: &mut impl borsh::io::Write,
+    ) -> borsh::io::Result<()> {
+        <u64 as borsh::BorshSerialize>::serialize(r, writer)?;
+        <u64 as borsh::BorshSerialize>::serialize(&duration.as_secs(), writer)?;
+        <u32 as borsh::BorshSerialize>::serialize(&duration.subsec_nanos(), writer)
+    }
+
+    pub(crate) fn deserialize(
+        reader: &mut impl borsh::io::Read,
+    ) -> borsh::io::Result<(u64, core::time::Duration)> {
+        let r = <u64 as borsh::BorshDeserialize>::deserialize_reader(reader)?;
+        let secs = <u64 as borsh::BorshDeserialize>::deserialize_reader(reader)?;
+        let nanos = <u32 as borsh::BorshDeserialize>::deserialize_reader(reader)?;
+        Ok((r, core::time::Duration::new(secs, nanos)))
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
