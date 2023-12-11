@@ -17,6 +17,10 @@ where
 /// Internal bucket state representation
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 struct Bucket {
     /// capacity, in abstract units
     cap: u64,
@@ -27,6 +31,10 @@ struct Bucket {
 /// Bucket configuration
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 pub struct BucketCfg<T> {
     /// Current bucket name
     pub this: T,
@@ -97,6 +105,10 @@ impl From<TryFromIntError> for Error {
 /// When several buckets are feeding from a single parent earlier one gets a priority
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 pub struct HTB<T> {
     state: Vec<Bucket>,
     ops: Vec<Op<T>>,
@@ -108,6 +120,10 @@ pub struct HTB<T> {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 enum Op<T> {
     Inflow(u64),
     Take(T, u64),
