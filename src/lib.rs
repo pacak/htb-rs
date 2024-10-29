@@ -331,6 +331,11 @@ where
         self.state[usize::from(label)].value >= self.unit_cost
     }
 
+    /// Shows how many tokens are available at
+    pub fn available(&self, label: T) -> u64 {
+        self.state[usize::from(label)].value / self.unit_cost
+    }
+
     /// Check if there's at least `cnt` tokens available at index `T`
     ///
     /// See also [`peek`][Self::peek]
@@ -423,12 +428,17 @@ mod tests {
     #[test]
     fn it_works() {
         let mut htb = sample_htb();
+        assert_eq!(htb.available(Rate::Hedge), 10);
         assert!(htb.take_n(Rate::Hedge, 4));
+        assert_eq!(htb.available(Rate::Hedge), 6);
         assert!(htb.take_n(Rate::Hedge, 4));
+        assert_eq!(htb.available(Rate::Hedge), 2);
         assert!(htb.take_n(Rate::Hedge, 2));
+        assert_eq!(htb.available(Rate::Hedge), 0);
         assert!(!htb.take_n(Rate::Hedge, 1));
         htb.advance(Duration::from_millis(1));
         assert!(htb.peek_n(Rate::Hedge, 1));
+        assert_eq!(htb.available(Rate::Hedge), 1);
         assert!(!htb.peek_n(Rate::Hedge, 2));
         assert!(htb.take(Rate::Hedge));
         assert!(!htb.take(Rate::Hedge));
