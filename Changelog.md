@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.4] - 2024-10-29
+- ::available method to query the remaining tokens
+
 ## [0.2.3] - 2023-12-11
 - optional borsh support
 
